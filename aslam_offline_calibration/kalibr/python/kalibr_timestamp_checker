@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+import os
+import sys
+import sm
+import copy
+import argparse
+import signal
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+import rosbag
+
+# make numpy print prettier
+np.set_printoptions(suppress=True)
+
+def signal_exit(signal, frame):
+    sm.logWarn("Shutdown requested! (CTRL+C)")
+    sys.exit(2)
+
+def parseArgs():
+    class KalibrArgParser(argparse.ArgumentParser):
+        def error(self,message):
+            self.print_help()
+            sm.logError('%s' % message)
+            sys.exit(2)
+        
+        def format_help(self):
+            formatter = self._get_formatter()
+            formatter.add_text(self.description)
+            formatter.add_usage(self.usage, self._actions,
+                                self._mutually_exclusive_groups)
+            for action_group in self._action_groups:
+                formatter.start_section(action_group.title)
+                formatter.add_text(action_group.description)
+                formatter.add_arguments(action_group._group_actions)
+                formatter.end_section()
+            formatter.add_text(self.epilog)
+            return super().format_help()
+
+    usage = """
+    Example usage to check sensor topic timestamp stability
+
+        %(prog)s --bag MYROSBAG.bag --topics /cam0/image_raw /cam1/image_raw
+    """
+    parser = KalibrArgParser(description = "Check sensors topic timestamp stability")
+    
+    groupSource = parser.add_argument_group('Data source')
+    groupSource.add_argument('--bag', dest='bagfile', help='The bag file with the data')
+    groupSource.add_argument('--topics', nargs='+', dest='topics', help='The list of image topics', required=True)
+    groupSource.add_argument('--bag-from-to', metavar='bag_from_to', type=float, nargs=2, help='Use the bag data starting from up to this time [s]')
+
+    outputSettings = parser.add_argument_group('Output options')
+    outputSettings.add_argument('--verbose', action='store_true', dest='verbose', help='Enable (really) verbose output (disables plots)')
+    outputSettings.add_argument('--plot', action='store_true', dest='plot', help='Plot check result')
+    outputSettings.add_argument('--dont-show-report', action='store_true', dest='dontShowReport', help='Do not show the report on screen after check.')
+
+    #print help if no argument is specified
+    if len(sys.argv)==1:
+        parser.print_help()
+        sys.exit(2)
+    
+    #Parser the argument list
+    try:
+        parsed = parser.parse_args()
+    except:
+        sys.exit(2)
+    
+    return parsed
+
+def main():
+    parsed = parseArgs()
+    
+    
+    #logging modes
+    if parsed.verbose:
+        sm.setLoggingLevel(sm.LoggingLevel.Debug)
+    else:
+        sm.setLoggingLevel(sm.LoggingLevel.Info)
+
+    #register signal handler
+    signal.signal(signal.SIGINT, signal_exit)
+
+    # topic information
+    topicList = list()
+    numTopic = len(parsed.topics)
+
+
+
