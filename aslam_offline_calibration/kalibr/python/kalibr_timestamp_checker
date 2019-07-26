@@ -1,8 +1,10 @@
 #!/usr/bin/env python
+
 import os
 import sys
 import sm
 import copy
+import math
 import argparse
 import signal
 
@@ -10,6 +12,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import rosbag
+
+import kalibr_common as kc
 
 # make numpy print prettier
 np.set_printoptions(suppress=True)
@@ -36,15 +40,15 @@ def parseArgs():
                 formatter.add_arguments(action_group._group_actions)
                 formatter.end_section()
             formatter.add_text(self.epilog)
-            return super().format_help()
-
+            return formatter.format_help()
     usage = """
     Example usage to check sensor topic timestamp stability
 
-        %(prog)s --bag MYROSBAG.bag --topics /cam0/image_raw /cam1/image_raw
-    """
-    parser = KalibrArgParser(description = "Check sensors topic timestamp stability")
-    
+        %(prog)s --bag MYROSBAG.bag --topics /cam0/image_raw /cam1/image_raw . """
+    #setup the argument list
+    parser = KalibrArgParser(description = "Check sensors topic timestamp stability", usage=usage)
+
+    #data source
     groupSource = parser.add_argument_group('Data source')
     groupSource.add_argument('--bag', dest='bagfile', help='The bag file with the data')
     groupSource.add_argument('--topics', nargs='+', dest='topics', help='The list of image topics', required=True)
@@ -65,13 +69,14 @@ def parseArgs():
         parsed = parser.parse_args()
     except:
         sys.exit(2)
-    
+
     return parsed
+
+
 
 def main():
     parsed = parseArgs()
-    
-    
+      
     #logging modes
     if parsed.verbose:
         sm.setLoggingLevel(sm.LoggingLevel.Debug)
@@ -82,8 +87,46 @@ def main():
     signal.signal(signal.SIGINT, signal_exit)
 
     # topic information
-    topicList = list()
+    check_dict = {}
+    topicList = list(parsed.topics)
     numTopic = len(parsed.topics)
 
+
+    bag = rosbag.Bag(str(parsed.bagfile))
+    print "\nload {} successful !!!\n".format(parsed.bagfile)
+
+    for item in topicList:
+        print "Fetch topic: {}".format(item)
+        ts_gap_list = list()
+        ts_before = 0
+        init_flag = False
+        for topic, msg, ts in bag.read_messages(topics = [item]):
+            if not init_flag:
+                ts_before = ts.to_nsec()
+                init_flag = True
+            ts_gap = abs((ts.to_nsec() - ts_before)/1e6) #ms
+            ts_gap_list.append(ts_gap)
+            ts_before = ts.to_nsec()
+
+        check_dict.update({item: ts_gap_list})
+    
+    # print check_dict
+    
+    for key,value in check_dict.items():
+        mean = np.mean(np.asarray(value))
+        var = np.var(np.asarray(value))
+
+        mean_list = list(np.full((len(value)),mean))
+        plt.plot(mean_list,'r', label = "mean:{}".format(mean))
+        plt.plot(value,'b*', label = key)
+        plt.title("timestamp check result")
+        plt.xlabel("frame")
+        plt.ylabel("timestamp gap between two adjacent frames(ms)")
+        plt.legend()
+        plt.show()
+
+
+if __name__ == "__main__":
+    main()
 
 
