@@ -102,11 +102,11 @@ def main():
         init_flag = False
         for topic, msg, ts in bag.read_messages(topics = [item]):
             if not init_flag:
-                ts_before = ts.to_nsec()
+                ts_before = msg.header.stamp.to_nsec()
                 init_flag = True
-            ts_gap = abs((ts.to_nsec() - ts_before)/1e6) #ms
+            ts_gap = abs((msg.header.stamp.to_nsec() - ts_before)/1e6) #ms
             ts_gap_list.append(ts_gap)
-            ts_before = ts.to_nsec()
+            ts_before = msg.header.stamp.to_nsec()
 
         check_dict.update({item: ts_gap_list})
     
@@ -115,6 +115,11 @@ def main():
     for key,value in check_dict.items():
         mean = np.mean(np.asarray(value))
         var = np.var(np.asarray(value))
+
+        textstr = '\n'.join((
+            r'$\mu=%.2f$' % (mean, ),
+            r'$\sigma=%.2f$' % (var, )))
+
 
         mean_list = list(np.full((len(value)),mean))
         plt.plot(mean_list,'r', label = "mean:{}".format(mean))
