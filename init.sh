@@ -75,6 +75,7 @@ fi
 
 # ros build 
 cd ../../
+catkin config --extend /opt/ros/$ROS_DISTRO
 catkin build
 
 
