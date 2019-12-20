@@ -63,3 +63,4 @@ THIS SOFTWARE IS PROVIDED BY THE AUTONOMOUS SYSTEMS LAB AND SKYBOTIX AG ''AS IS'
 
 ## Feature 
 * add kalibr_timestamp_checker
+* add dataset convert to rosbag
