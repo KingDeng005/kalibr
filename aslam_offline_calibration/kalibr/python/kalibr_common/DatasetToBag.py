@@ -1,12 +1,17 @@
 import os
 import sys
+import time
 import argparse
 import numpy as np
 import signal
 from dataset_store import Dataset
 
+import cv2
 import rospy
 import rosbag
+from cv_bridge import CvBridge
+from sensor_msgs.msg import Image 
+from sensor_msgs.msg import Imu
 
 
 # make numpy print prettier
@@ -83,6 +88,7 @@ class DatasetConverter(object):
     def __init__(self,dataset_name,cam_topics,imu_topics,out_path):
         
         #setup param
+        self.bridge = CvBridge()
         self.dataset = dataset_name[0]
         self.cam_topics = list(cam_topics)
         self.imu_topics = list(imu_topics)
@@ -108,7 +114,31 @@ class DatasetConverter(object):
             print("******************************************************")
             print("Start convert {}".format(topic))
             for ts,msgs in self.ds.fetch(topic,ts_begin=begin,ts_end=end,limit=limit):
-                self.bag.write(topic,msgs,t=msgs.header.stamp)
+                
+                if "image_color/compressed" in topic:
+                    #convert compressed to color and resize image
+                    img_np = cv2.imdecode(np.fromstring(msgs.data,np.uint8),cv2.IMREAD_COLOR)
+                    #resize image
+                    if img_np.shape[1] ==2048:
+                        img_np = cv2.resize(img_np,(1024,576))
+                    if img_np.shape[1] ==1920:
+                        img_np = cv2.resize(img_np,(960,540))
+                    img_ros = self.bridge.cv2_to_imgmsg(img_np,"bgr8")
+                    img_ros.header.stamp = msgs.header.stamp
+                    self.bag.write(topic[:-11],img_ros,t=msgs.header.stamp)
+        
+                if "xsens_driver/imupos" in topic:
+                    #convert xsens_msgs/IMUDATA to sensor_msgs/Imu
+                    rosimu = Imu()
+                    rosimu.header.stamp = msgs.header.stamp
+                    rosimu.angular_velocity.x = msgs.gyrx
+                    rosimu.angular_velocity.y = msgs.gyry
+                    rosimu.angular_velocity.z = msgs.gyrz
+
+                    rosimu.linear_acceleration.x = msgs.accx
+                    rosimu.linear_acceleration.y = msgs.accy
+                    rosimu.linear_acceleration.z = msgs.accz
+                    self.bag.write(topic,rosimu,t=msgs.header.stamp)
             print("save {} successful!!!".format(topic))
         print("Convert finished!!!")
         self.bag.close()
