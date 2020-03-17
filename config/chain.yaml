@@ -1,17 +1,17 @@
 cam0:
   cam_overlaps: []
   camera_model: pinhole
-  intrinsics: [3854.4260, 3835.6137, 526.8109, 312.4926]
+  intrinsics: [7255.78496321, 7255.78496321, 1044.3998515, 660.57744351]
   distortion_model: radtan
-  distortion_coeffs: [0.0422, -2.0858, -0.0025, 0.0010]
+  distortion_coeffs: [-0.028982185687907436, -0.6251005904992704, 0, 0]
   T_cam_imu:
-  - [ 0.0025567,  -0.99999573,  0.00141226, -0.02002475]
-  - [-0.01029278, -0.00143851, -0.99994599, -0.03945504]
-  - [0.99994376,  0.00254203, -0.01029642 , 0.0191598]
+  - [0,  -1,  0, -0.00227]
+  - [0,   0, -1, -0.05074]
+  - [1,   0,  0,  0.00721]
   - [0.0, 0.0, 0.0, 1.0]
-  timeshift_cam_imu: -8.121e-05
-  rostopic: /camera1/image_color
-  resolution: [1024, 576]
+  timeshift_cam_imu: 0  # -8.121e-05
+  rostopic: /camera4/image_color
+  resolution: [2048, 1152]
 # cam1:
 #   camera_model: omni
 #   intrinsics: [0.80065662, 833.006, 830.345, 373.850, 253.749]

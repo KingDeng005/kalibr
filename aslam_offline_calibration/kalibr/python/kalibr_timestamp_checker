@@ -114,15 +114,17 @@ def main():
     
     for key,value in check_dict.items():
         mean = np.mean(np.asarray(value))
-        var = np.var(np.asarray(value))
+        std = np.std(np.asarray(value))
 
         textstr = '\n'.join((
             r'$\mu=%.2f$' % (mean, ),
-            r'$\sigma=%.2f$' % (var, )))
+            r'$\sigma=%.2f$' % (std, )))
 
 
         mean_list = list(np.full((len(value)),mean))
+        std_list = list(np.full((len(value)),mean + std))
         plt.plot(mean_list,'r', label = "mean:{}".format(mean))
+        #plt.plot(std_list,'g', label = "std:{}".format(std))
         plt.plot(value,'b*', label = key)
         plt.title("timestamp check result")
         plt.xlabel("frame")
