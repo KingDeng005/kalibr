@@ -37,7 +37,7 @@ def initImuBagDataset(bagfile, topic, from_to=None, perform_synchronization=Fals
 
 #mono camera
 class IccCamera():
-    def __init__(self, camConfig, targetConfig, dataset, reprojectionSigma=1.0, showCorners=True, \
+    def __init__(self, camConfig, targetConfig, dataset, extrinsic, reprojectionSigma=1.0, showCorners=True, \
                  showReproj=True, showOneStep=False):
         
         #store the configuration
@@ -49,7 +49,10 @@ class IccCamera():
         self.cornerUncertainty = reprojectionSigma
 
         #set the extrinsic prior to default
-        self.T_extrinsic = sm.Transformation()
+        self.T_extrinsic = extrinsic 
+        print("\n\n\n\n")
+        print("extrinsic: ", self.T_extrinsic.t())
+        print("\n\n\n\n")
          
         #initialize timeshift prior to zero
         self.timeshiftCamToImuPrior = 0.0
@@ -417,6 +420,10 @@ class IccCameraChain():
         self.camList = []
         for camNr in range(0, chainConfig.numCameras()):
             camConfig = chainConfig.getCameraParameters(camNr)
+
+            print("\n\n\n\n\n\n") 
+            print(chainConfig.getExtrinsicsImuToCam(0))
+            print("\n\n\n\n\n\n") 
             dataset = initCameraBagDataset(parsed.bagfile[0], camConfig.getRosTopic(), \
                                            parsed.bag_from_to, parsed.perform_synchronization)
             
@@ -424,6 +431,7 @@ class IccCameraChain():
             self.camList.append( IccCamera( camConfig, 
                                             targetConfig, 
                                             dataset, 
+                                            chainConfig.getExtrinsicsImuToCam(0),
                                             #Ultimately, this should come from the camera yaml.
                                             reprojectionSigma=parsed.reprojection_sigma, 
                                             showCorners=parsed.showextraction,

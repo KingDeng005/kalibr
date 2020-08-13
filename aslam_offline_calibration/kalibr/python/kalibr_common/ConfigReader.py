@@ -651,6 +651,9 @@ class CalibrationTargetParameters(ParametersBase):
         
 class CameraChainParameters(ParametersBase):
     def __init__(self, yamlFile, createYaml=False):
+        print("\n\n\n\n\n\n")
+        print("entering chain params")
+        print("\n\n\n\n\n\n")
         ParametersBase.__init__(self, yamlFile, "CameraChainParameters", createYaml)
     
     ###################################################
@@ -699,6 +702,10 @@ class CameraChainParameters(ParametersBase):
         if not isinstance(extrinsics, sm.Transformation):
             raise RuntimeError("setExtrinsicsImuToCam(): provide extrinsics as an sm.Transformation object")
         
+        print("\n\n\n\n\n\n")
+        print("setting cam imu")
+        print("\n\n\n\n\n\n")
+
         self.data["cam{0}".format(camNr)]['T_cam_imu'] = extrinsics.T().tolist()
     
     @catch_keyerror
@@ -707,6 +714,7 @@ class CameraChainParameters(ParametersBase):
             self.raiseError("out-of-range: T_imu_cam not in chain!")
         
         try:
+            print(np.array(self.data["cam{0}".format(camNr)]['T_cam_imu']))
             trafo = sm.Transformation( np.array(self.data["cam{0}".format(camNr)]['T_cam_imu']) )
             t = trafo.T() #for error checking
         except:
